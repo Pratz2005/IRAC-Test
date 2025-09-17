@@ -24,7 +24,7 @@ python -m venv .venv
 # Windows (PowerShell): .\.venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-
+```
 
 ## Code to set up supabase DB tables
 
