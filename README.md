@@ -17,11 +17,6 @@ Backend API for a proof-of-concept risk management app supporting two roles:
 - FastAPI, Uvicorn, Supabase (Auth + Postgres), python-dotenv, Pydantic
 - Python virtualenv with `requirements.txt`
 
-## Create a .env file and fill it like so
-```
-SUPABASE_URL=https://<your-project-id>.supabase.co
-SUPABASE_KEY=<your-anon-or-service-role-key>
-```
 
 ## Environment & Install
 Create and activate a virtual environment, then install:
@@ -30,6 +25,12 @@ python -m venv .venv
 # Windows (PowerShell): .\.venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+## Create a .env file and fill it like so
+```
+SUPABASE_URL=https://<your-project-id>.supabase.co
+SUPABASE_KEY=<your-anon-or-service-role-key>
 ```
 
 ## Code to set up supabase DB tables
