@@ -1,5 +1,31 @@
 # IRAC-Test
 
+# Risk Management Web App — Backend
+
+Backend API for a proof-of-concept risk management app supporting two roles:
+- **Project Manager (PM):** view the global risk scenario library, build a project risk table, update mitigation status.
+- **Risk Consultant (RC):** view all PM risk tables and see dashboard statistics.
+
+## Features
+- Supabase authentication (store role as user metadata: `PM` / `RC`)
+- Risk scenario library (view, add)
+- Risk tables per PM (add scenario, set mitigation status: `not mitigated` / `partially mitigated` / `fully mitigated`)
+- Dashboard stats (e.g., distribution of scenarios across projects)
+- Interactive OpenAPI docs at `/docs`
+
+## Tech
+- FastAPI, Uvicorn, Supabase (Auth + Postgres), python-dotenv, Pydantic
+- Python virtualenv with `requirements.txt`
+
+## Environment & Install
+Create and activate a virtual environment, then install:
+```bash
+python -m venv .venv
+# Windows (PowerShell): .\.venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+
+
 ## Code to set up supabase DB tables
 
 -- Global risk scenario library
