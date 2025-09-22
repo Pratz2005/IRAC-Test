@@ -8,7 +8,7 @@ class RiskScenario(BaseModel):
     mitigation_strategy: str
 
 class RiskTableItem(BaseModel):
-    id: Optional[str]
+    id: Optional[str] = None
     risk_scenario_id: str
     mitigation_status: str   # "not mitigated", "partially mitigated", "fully mitigated"
 
