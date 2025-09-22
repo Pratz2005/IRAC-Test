@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Shield, BarChart3, PieChart, TrendingUp, Users, AlertTriangle, CheckCircle, Clock, User, LogOut, Filter, Download, Eye } from "lucide-react";
+import {
+    Shield, BarChart3, PieChart, TrendingUp, Users, AlertTriangle,
+    CheckCircle, Clock, User, LogOut, Download, Eye
+} from "lucide-react";
 
 import { getAllRiskTables, getDashboardStats } from "@/app/lib/api";
 
@@ -27,27 +30,34 @@ export default function RCDashboard() {
         risk_distribution: {},
         mitigation_progress: {},
         project_managers: 0,
-        total_risks: 0
+        total_risks: 0,
     });
+
     const [selectedFilter, setSelectedFilter] = useState<string>("all");
     const [selectedProject, setSelectedProject] = useState<string>("all");
 
-    useEffect(() => {
-        getAllRiskTables().then((res) => setTables(res.data));
-        getDashboardStats().then((res) => setStats(res.data));
-    }, []);
+    // 🔑 logged-in RC user
+    const [user, setUser] = useState<{ email: string; role: string } | null>(null);
 
     useEffect(() => {
-        getDashboardStats().then((res) => {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+
+        // fetch tables + stats
+        getAllRiskTables().then((res) => setTables(res.data));
+        getDashboardStats().then((res) =>
             setStats({
                 risk_distribution: res.data.risk_distribution || {},
                 mitigation_progress: res.data.mitigation_progress || {},
                 project_managers: res.data.project_managers || 0,
                 total_risks: res.data.total_risks || 0,
-            });
-        });
+            })
+        );
     }, []);
 
+    // icon helpers
     const getStatusIcon = (status: string) => {
         switch (status) {
             case "fully mitigated":
@@ -60,71 +70,77 @@ export default function RCDashboard() {
     };
 
     const getStatusBadge = (status: string) => {
-        const baseClasses = "px-3 py-1 rounded-full text-xs font-semibold";
+        const base = "px-3 py-1 rounded-full text-xs font-semibold";
         switch (status) {
             case "fully mitigated":
-                return `${baseClasses} bg-green-100 text-green-800`;
+                return `${base} bg-green-100 text-green-800`;
             case "partially mitigated":
-                return `${baseClasses} bg-yellow-100 text-yellow-800`;
+                return `${base} bg-yellow-100 text-yellow-800`;
             default:
-                return `${baseClasses} bg-red-100 text-red-800`;
+                return `${base} bg-red-100 text-red-800`;
         }
     };
 
-    const filteredTables = tables.filter(item => {
+    // filters
+    const filteredTables = tables.filter((item) => {
         const statusMatch = selectedFilter === "all" || item.mitigation_status === selectedFilter;
         const projectMatch = selectedProject === "all" || item.project_manager_id === selectedProject;
         return statusMatch && projectMatch;
     });
 
-    const uniqueProjects = Array.from(new Set(tables.map(item => item.project_manager_id)))
-        .map(id => {
-            const item = tables.find(t => t.project_manager_id === id);
-            return { id, name: item?.pm_name || id, project: item?.project_name || "Unknown Project" };
-        });
+    const uniqueProjects = Array.from(new Set(tables.map((t) => t.project_manager_id))).map((id) => {
+        const item = tables.find((t) => t.project_manager_id === id);
+        return {
+            id,
+            name: item?.pm_name || id,
+            project: item?.project_name || "Unknown Project",
+        };
+    });
 
+    // chart data
     const riskDistributionData = Object.entries(stats.risk_distribution).map(([name, count]) => ({
         name,
         count,
-        percentage: Math.round((count / stats.total_risks) * 100)
+        percentage: stats.total_risks > 0 ? Math.round((count / stats.total_risks) * 100) : 0,
     }));
 
     const mitigationData = Object.entries(stats.mitigation_progress || {}).map(([status, count]) => ({
         status,
         count,
-        percentage: stats.total_risks > 0
-            ? Math.round((count / stats.total_risks) * 100)
-            : 0
+        percentage: stats.total_risks > 0 ? Math.round((count / stats.total_risks) * 100) : 0,
     }));
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-                <div className="px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-3">
-                                <Shield className="w-8 h-8 text-purple-600" />
-                                <div>
-                                    <h1 className="text-2xl font-bold text-gray-900">RiskGuard</h1>
-                                    <p className="text-sm text-gray-500">Risk Consultant Dashboard</p>
-                                </div>
-                            </div>
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+                <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <Shield className="w-8 h-8 text-purple-600" />
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">RiskGuard</h1>
+                            <p className="text-sm text-gray-500">Risk Consultant Dashboard</p>
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <button className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                                <Download className="w-4 h-4" />
-                                <span>Export Report</span>
-                            </button>
-                            <div className="flex items-center space-x-2 text-gray-600">
-                                <User className="w-5 h-5" />
-                                <span className="text-sm font-medium">Sarah Wilson</span>
-                            </div>
-                            <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                                <LogOut className="w-5 h-5" />
-                            </button>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                        <button className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                            <Download className="w-4 h-4" />
+                            <span>Export Report</span>
+                        </button>
+                        <div className="flex items-center space-x-2 text-gray-600">
+                            <User className="w-5 h-5" />
+                            <span className="text-sm font-medium">{user?.email || "Loading..."}</span>
                         </div>
+                        <button
+                            onClick={() => {
+                                localStorage.clear();
+                                window.location.href = "/";
+                            }}
+                            className="p-2 text-gray-400 hover:text-gray-600 transition"
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
             </header>
@@ -157,7 +173,7 @@ export default function RCDashboard() {
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Mitigation Rate</p>
                                 <p className="text-3xl font-bold text-green-600">
-                                    {Math.round((((stats.mitigation_progress?.["fully mitigated"] || 0) / (stats.total_risks || 1)) * 100))}
+                                    {Math.round(((stats.mitigation_progress?.["fully mitigated"] || 0) / (stats.total_risks || 1)) * 100)}%
                                 </p>
                             </div>
                             <TrendingUp className="w-8 h-8 text-green-500" />
@@ -179,7 +195,7 @@ export default function RCDashboard() {
 
                 {/* Analytics Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    {/* Risk Distribution Chart */}
+                    {/* Risk Distribution */}
                     <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold text-gray-900">Risk Scenario Distribution</h3>
@@ -201,7 +217,7 @@ export default function RCDashboard() {
                         </div>
                     </div>
 
-                    {/* Mitigation Progress Chart */}
+                    {/* Mitigation Progress */}
                     <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold text-gray-900">Mitigation Progress</h3>
@@ -212,14 +228,19 @@ export default function RCDashboard() {
                                 <div key={item.status} className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-gray-700 capitalize">
-                                            {item.status.replace('_', ' ')}
+                                            {item.status.replace("_", " ")}
                                         </span>
-                                        <span className="text-sm font-bold text-gray-900">{item.count} ({item.percentage}%)</span>
+                                        <span className="text-sm font-bold text-gray-900">
+                                            {item.count} ({item.percentage}%)
+                                        </span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2">
                                         <div
-                                            className={`h-2 rounded-full ${item.status === 'fully mitigated' ? 'bg-green-500' :
-                                                item.status === 'partially mitigated' ? 'bg-yellow-500' : 'bg-red-500'
+                                            className={`h-2 rounded-full ${item.status === "fully mitigated"
+                                                ? "bg-green-500"
+                                                : item.status === "partially mitigated"
+                                                    ? "bg-yellow-500"
+                                                    : "bg-red-500"
                                                 }`}
                                             style={{ width: `${item.percentage}%` }}
                                         ></div>
@@ -230,35 +251,33 @@ export default function RCDashboard() {
                     </div>
                 </div>
 
-                {/* Risk Tables Overview */}
+                {/* Risk Tables */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <div className="p-6 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-gray-900">All Risk Tables</h2>
-                            <div className="flex items-center space-x-3">
-                                <select
-                                    value={selectedProject}
-                                    onChange={(e) => setSelectedProject(e.target.value)}
-                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                >
-                                    <option value="all">All Projects</option>
-                                    {uniqueProjects.map((project) => (
-                                        <option key={project.id} value={project.id}>
-                                            {project.name} - {project.project}
-                                        </option>
-                                    ))}
-                                </select>
-                                <select
-                                    value={selectedFilter}
-                                    onChange={(e) => setSelectedFilter(e.target.value)}
-                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                >
-                                    <option value="all">All Status</option>
-                                    <option value="not mitigated">Not Mitigated</option>
-                                    <option value="partially mitigated">Partially Mitigated</option>
-                                    <option value="fully mitigated">Fully Mitigated</option>
-                                </select>
-                            </div>
+                    <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-gray-900">All Risk Tables</h2>
+                        <div className="flex items-center space-x-3">
+                            <select
+                                value={selectedProject}
+                                onChange={(e) => setSelectedProject(e.target.value)}
+                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                            >
+                                <option value="all">All Projects</option>
+                                {uniqueProjects.map((project) => (
+                                    <option key={project.id} value={project.id}>
+                                        {project.name} - {project.project}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={selectedFilter}
+                                onChange={(e) => setSelectedFilter(e.target.value)}
+                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                            >
+                                <option value="all">All Status</option>
+                                <option value="not mitigated">Not Mitigated</option>
+                                <option value="partially mitigated">Partially Mitigated</option>
+                                <option value="fully mitigated">Fully Mitigated</option>
+                            </select>
                         </div>
                     </div>
 
@@ -274,11 +293,11 @@ export default function RCDashboard() {
                                 <table className="w-full">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Manager</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Scenario</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project Manager</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Scenario</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Progress</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -287,32 +306,45 @@ export default function RCDashboard() {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
                                                         <User className="w-5 h-5 text-gray-400 mr-3" />
-                                                        <span className="text-sm font-medium text-gray-900">{item.pm_name || item.project_manager_id}</span>
+                                                        <span className="text-sm font-medium text-gray-900">
+                                                            {item.pm_name || item.project_manager_id}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm text-gray-900">{item.project_name || "Unknown Project"}</span>
+                                                    <span className="text-sm text-gray-900">
+                                                        {item.project_name || "Unknown Project"}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="text-sm font-medium text-gray-900">{item.risk_name || `Risk ${item.risk_scenario_id}`}</span>
+                                                    <span className="text-sm font-medium text-gray-900">
+                                                        {item.risk_name || `Risk ${item.risk_scenario_id}`}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center space-x-2">
                                                         {getStatusIcon(item.mitigation_status)}
                                                         <span className={getStatusBadge(item.mitigation_status)}>
-                                                            {item.mitigation_status.replace('_', ' ')}
+                                                            {item.mitigation_status.replace("_", " ")}
                                                         </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="w-full bg-gray-200 rounded-full h-2">
                                                         <div
-                                                            className={`h-2 rounded-full ${item.mitigation_status === 'fully mitigated' ? 'bg-green-500' :
-                                                                item.mitigation_status === 'partially mitigated' ? 'bg-yellow-500' : 'bg-red-500'
+                                                            className={`h-2 rounded-full ${item.mitigation_status === "fully mitigated"
+                                                                ? "bg-green-500"
+                                                                : item.mitigation_status === "partially mitigated"
+                                                                    ? "bg-yellow-500"
+                                                                    : "bg-red-500"
                                                                 }`}
                                                             style={{
-                                                                width: item.mitigation_status === 'fully mitigated' ? '100%' :
-                                                                    item.mitigation_status === 'partially mitigated' ? '50%' : '10%'
+                                                                width:
+                                                                    item.mitigation_status === "fully mitigated"
+                                                                        ? "100%"
+                                                                        : item.mitigation_status === "partially mitigated"
+                                                                            ? "50%"
+                                                                            : "10%",
                                                             }}
                                                         ></div>
                                                     </div>

@@ -30,7 +30,7 @@ export default function HomePage() {
         if (role === "PM") {
           router.push("/pm");
         } else if (role === "RC") {
-          router.push("/rc");
+          router.push("/rm");
         } else {
           router.push("/"); // fallback
         }
